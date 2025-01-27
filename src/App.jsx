@@ -127,7 +127,6 @@ function App() {
       const res = await axios.post(`${BASE_URL}/v2/api/${API_PATH}/order`, data)
       alert(res.data.message); //"已建立訂單"
     }catch (error){
-      console.log(error);
       alert('結帳失敗')
     }
    };
@@ -219,7 +218,7 @@ function App() {
                     id="qtySelect"
                     className="form-select">
                     {Array.from({ length: 10}).map((_, index) => (
-                      <option keys={index} value={index + 1}>{index + 1}</option>
+                      <option key={index} value={index + 1}>{index + 1}</option>
                     ))}
                   </select>
                 </div>
