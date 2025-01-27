@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { Modal } from "bootstrap";
+import { useForm } from "react-hook-form";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 const API_PATH = import.meta.env.VITE_API_PATH;
@@ -100,6 +101,36 @@ function App() {
       alert('購物車更新數量失敗')
     }
   };
+
+  const { 
+    register,
+    handleSubmit,
+    formState: { errors }
+   } = useForm();
+
+   const onSubmit = (data) => {
+    console.log('表單資料', data);
+    
+    const { message, ...user } = data;
+    const userData = {
+      data: {
+        user,
+        message
+      }
+    };
+    submitOrder(userData);
+    reset(); // 清空表單
+   };
+
+   const submitOrder = async (data) => {
+    try{
+      const res = await axios.post(`${BASE_URL}/v2/api/${API_PATH}/order`, data)
+      alert(res.data.message); //"已建立訂單"
+    }catch (error){
+      console.log(error);
+      alert('結帳失敗')
+    }
+   };
 
   return (
     <div className="container">
@@ -283,18 +314,25 @@ function App() {
 
         {/* Form表單 */}
         <div className="my-5 row justify-content-center">
-          <form className="col-md-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="col-md-6">
             <div className="mb-3">
               <label htmlFor="email" className="form-label">
                 Email
               </label>
               <input
+                {...register('email', {
+                  required: 'Email 欄位必填',
+                  pattern: {
+                    value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                    message: 'Email 格式錯誤'
+                  }
+                })}
                 id="email"
                 type="email"
-                className="form-control"
+                className={`form-control ${errors.email && 'is-invalid'}`}
                 placeholder="請輸入 Email" />
-
-                <p className="text-danger my-2"></p>
+                
+                {errors.email && <p className="text-danger my-2">{errors.email.message}</p>}
             </div>
 
             <div className="mb-3">
@@ -302,11 +340,14 @@ function App() {
                 收件人姓名
               </label>
               <input
+                {...register('name', {
+                  required: '姓名 欄位必填'
+                })}
                 id="name"
-                className="form-control"
+                className={`form-control ${errors.name && 'is-invalid'}`}
                 placeholder="請輸入姓名" />
 
-              <p className="text-danger my-2"></p>
+              {errors.name && <p className="text-danger my-2">{errors.name.message}</p>}
             </div>
 
             <div className="mb-3">
@@ -314,12 +355,19 @@ function App() {
                 收件人電話
               </label>
               <input
+                {...register('tel', {
+                  required: '電話 欄位必填',
+                  pattern: {
+                    value: /^(0[2-8]\d{7}|09\d{8})$/,
+                    message: '電話 格式錯誤'
+                  }
+                })}
                 id="tel"
                 type="text"
-                className="form-control"
+                className={`form-control ${errors.tel && 'is-invalid'}`}
                 placeholder="請輸入電話" />
 
-              <p className="text-danger my-2"></p>
+              {errors.tel && <p className="text-danger my-2">{errors.tel.message}</p>}
             </div>
 
             <div className="mb-3">
@@ -327,12 +375,15 @@ function App() {
                 收件人地址
               </label>
               <input
+                {...register('address', {
+                  required: '地址 欄位必填'
+                })}
                 id="address"
                 type="text"
-                className="form-control"
+                className={`form-control ${errors.address && 'is-invalid'}`}
                 placeholder="請輸入地址" />
 
-              <p className="text-danger my-2"></p>
+              {errors.address && <p className="text-danger my-2">{errors.address.message}</p>}
             </div>
 
             <div className="mb-3">
@@ -340,6 +391,7 @@ function App() {
                 留言
               </label>
               <textarea
+                {...register('message')}
                 id="message"
                 className="form-control"
                 cols="30"
