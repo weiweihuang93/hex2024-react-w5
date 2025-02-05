@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { Modal } from "bootstrap";
 import { useForm } from "react-hook-form";
+import ReactLoading from 'react-loading';
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 const API_PATH = import.meta.env.VITE_API_PATH;
@@ -12,14 +13,19 @@ function App() {
   const [tempProduct, setTempProduct] = useState([]);
   const [qtySelect, setQtySelect] = useState(1);
   const [cart, setCart] = useState({});
+  const [isScreenLoading, setIsScreenLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const getProducts = async () => {
+      setIsScreenLoading(true);
       try{
         const res = await axios.get(`${BASE_URL}/v2/api/${API_PATH}/products`);
         setProducts(res.data.products);
       }catch (error){
         alert('產品載入失敗')
+      }finally{
+        setIsScreenLoading(false);
       }
     };
     getProducts();
@@ -52,10 +58,13 @@ function App() {
       setCart(res.data.data);
     }catch (error){
       alert('購物車載入失敗')
+    }finally{
+      setIsScreenLoading(false);
     }
   };
 
   const addCart = async (product_id, qty) => {
+    setIsLoading(true);
     try{
       const res = await axios.post(`${BASE_URL}/v2/api/${API_PATH}/cart`, {
         data: {
@@ -67,28 +76,37 @@ function App() {
       getCart();
     }catch (error){
       alert('購物車加入失敗')
+    }finally{
+      setIsLoading(false);
     }
   };
 
   const delAllCart = async () => {
+    setIsScreenLoading(true);
     try{
       await axios.delete(`${BASE_URL}/v2/api/${API_PATH}/carts`);
       getCart();
     }catch (error){
       alert('購物車清空失敗')
+    }finally{
+      setIsScreenLoading(false);
     }
   };
 
   const delIdCart = async (cart_id) => {
+    setIsScreenLoading(true);
     try{
       await axios.delete(`${BASE_URL}/v2/api/${API_PATH}/cart/${cart_id}`);
       getCart();
     }catch (error){
       alert('單項商品刪除失敗')
+    }finally{
+      setIsScreenLoading(false);
     }
   };
 
   const updateQtyCart = async (cart_id, product_id, qty) => {
+    setIsScreenLoading(true);
     try{
       await axios.put(`${BASE_URL}/v2/api/${API_PATH}/cart/${cart_id}`, {
         data: {
@@ -99,18 +117,19 @@ function App() {
       getCart();
     }catch (error){
       alert('購物車更新數量失敗')
+    }finally{
+      setIsScreenLoading(false);
     }
   };
 
   const { 
     register,
     handleSubmit,
+    reset,
     formState: { errors }
    } = useForm();
 
-   const onSubmit = (data) => {
-    console.log('表單資料', data);
-    
+   const onSubmit = (data) => {    
     const { message, ...user } = data;
     const userData = {
       data: {
@@ -123,11 +142,16 @@ function App() {
    };
 
    const submitOrder = async (data) => {
+    setIsScreenLoading(true);
     try{
       const res = await axios.post(`${BASE_URL}/v2/api/${API_PATH}/order`, data)
       alert(res.data.message); //"已建立訂單"
+      getCart();
     }catch (error){
-      alert('結帳失敗')
+      const errorMessage = error.response?.data?.message || '未知錯誤';
+      alert(`結帳失敗: ${errorMessage}`);
+    }finally{
+      setIsScreenLoading(false);
     }
    };
 
@@ -165,10 +189,12 @@ function App() {
                         查看更多
                     </button>
                     <button
+                      disabled={isLoading}
                       onClick={() => addCart(product.id, 1)}
                       type="button" 
-                      className="btn btn-outline-danger">
-                        加到購物車
+                      className="btn btn-outline-danger d-flex align-items-center gap-2">
+                      <div>加到購物車</div>
+                      {isLoading && <ReactLoading type={"spin"} color={"#000"} height={"1.5rem"} width={"1.5rem"} />}
                     </button>
                   </div>
                 </td>
@@ -225,9 +251,11 @@ function App() {
               </div>
               <div className="modal-footer">
                 <button
+                  disabled={isLoading}
                   onClick={() => addCart(tempProduct.id, qtySelect)}
-                  type="button" className="btn btn-primary">
-                  加入購物車
+                  type="button" className="btn btn-primary d-flex align-items-center gap-2">
+                  <div>加入購物車</div>
+                  {isLoading && <ReactLoading type={"spin"} color={"#000"} height={"1.5rem"} width={"1.5rem"} />}
                 </button>
               </div>
             </div>
@@ -331,7 +359,7 @@ function App() {
                 className={`form-control ${errors.email && 'is-invalid'}`}
                 placeholder="請輸入 Email" />
                 
-                {errors.email && <p className="text-danger my-2">{errors.email.message}</p>}
+                {errors?.email && <p className="text-danger my-2">{errors.email.message}</p>}
             </div>
 
             <div className="mb-3">
@@ -346,7 +374,7 @@ function App() {
                 className={`form-control ${errors.name && 'is-invalid'}`}
                 placeholder="請輸入姓名" />
 
-              {errors.name && <p className="text-danger my-2">{errors.name.message}</p>}
+              {errors?.name && <p className="text-danger my-2">{errors.name.message}</p>}
             </div>
 
             <div className="mb-3">
@@ -366,7 +394,7 @@ function App() {
                 className={`form-control ${errors.tel && 'is-invalid'}`}
                 placeholder="請輸入電話" />
 
-              {errors.tel && <p className="text-danger my-2">{errors.tel.message}</p>}
+              {errors?.tel && <p className="text-danger my-2">{errors.tel.message}</p>}
             </div>
 
             <div className="mb-3">
@@ -382,7 +410,7 @@ function App() {
                 className={`form-control ${errors.address && 'is-invalid'}`}
                 placeholder="請輸入地址" />
 
-              {errors.address && <p className="text-danger my-2">{errors.address.message}</p>}
+              {errors?.address && <p className="text-danger my-2">{errors.address.message}</p>}
             </div>
 
             <div className="mb-3">
@@ -406,6 +434,17 @@ function App() {
         </div>
 
       </div>
+
+      {isScreenLoading && (
+        <div
+          className="d-flex justify-content-center align-items-center"
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(255,255,255,0.3)",
+            zIndex: 999,}}>
+          <ReactLoading type="spin" color="black" width="4rem" height="4rem" />
+        </div>)}
     </div>
   )
 };
